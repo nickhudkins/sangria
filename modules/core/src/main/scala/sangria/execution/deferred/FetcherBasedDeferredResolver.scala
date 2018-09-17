@@ -328,6 +328,7 @@ class FetcherBasedDeferredResolver[-Ctx](fetchers: Vector[Fetcher[Ctx, _, _, _]]
         val hits = MutableMap[Relation[Any, Any, Any], MutableMap[Any, Seq[Any]]]()
 
         def addHit(rel: Relation[Any, Any, Any], relId: Any, res: Seq[Any]) =
+<<<<<<< HEAD:modules/core/src/main/scala/sangria/execution/deferred/FetcherBasedDeferredResolver.scala
           hits.get(rel) match {
             case Some(map) => map(relId) = res
             case None =>
@@ -344,6 +345,12 @@ class FetcherBasedDeferredResolver[-Ctx](fetchers: Vector[Fetcher[Ctx, _, _, _]]
               set += relId
               misses(rel) = set
           }
+=======
+          hits.getOrElseUpdate(rel, MutableMap[Any, Seq[Any]]())(relId) = res
+
+        def addMiss(rel: Relation[Any, Any, Any], relId: Any) =
+          misses.getOrElseUpdate(rel, MutableSet[Any]()) += relId
+>>>>>>> Use Map#getOrElseUpdate where applicable:src/main/scala/sangria/execution/deferred/FetcherBasedDeferredResolver.scala
 
         ids.foreach { case (rel, ids) =>
           ids foreach { relId =>
@@ -379,13 +386,7 @@ class FetcherBasedDeferredResolver[-Ctx](fetchers: Vector[Fetcher[Ctx, _, _, _]]
         val mappedRes = rel.map(res)
 
         relIds foreach { relId =>
-          identified.get(relId) match {
-            case Some(builder) => builder += mappedRes
-            case None =>
-              val builder = new VectorBuilder[Any]
-              builder += mappedRes
-              identified(relId) = builder
-          }
+          identified.getOrElseUpdate(relId, new VectorBuilder[Any]) += mappedRes
         }
       }
 
@@ -394,13 +395,7 @@ class FetcherBasedDeferredResolver[-Ctx](fetchers: Vector[Fetcher[Ctx, _, _, _]]
 
         updateCache(rel, relId, res)
 
-        grouped.get(rel) match {
-          case Some(map) => map(relId) = res
-          case None =>
-            val map = MutableMap[Any, Seq[Any]]()
-            map(relId) = res
-            grouped(rel) = map
-        }
+        grouped.getOrElseUpdate(rel, MutableMap[Any, Seq[Any]]())(relId) = res
       }
     }
 
